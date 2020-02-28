@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>WebRTC Example</title>
+</head>
+
+<body>
+    <script type="text/javascript" src='sipjs.js'></script>
+    <script type="text/javascript">
+        if (window.WebSocket) {
+            window.onload = () => {
+                call.onclick = () => {
+                    const userAgent = new SIP.UA({
+                        uri: `${login.value}@enp.itx.ru`,
+                        transportOptions: {
+                            wsServers: ['wss://enp.itx.ru/webrtc/socket'],
+                            traceSip: true
+                        },
+                        authorizationUser: login.value,
+                        password: password.value
+                    })
+                    const session = userAgent.invite(`${destination.value}@enp.itx.ru`, {
+                        sessionDescriptionHandlerOptions: {
+                            constraints: {
+                                audio: true,
+                                video: false
+                            }
+                        }
+                    })
+                    session.on('trackAdded', () => {
+                        const pc = session.sessionDescriptionHandler.peerConnection
+                        for (const audio of [localAudio, remoteAudio]) {
+                            const stream = new MediaStream()
+                            pc.getReceivers().forEach((receiver) => { stream.addTrack(receiver.track) })
+                            audio.srcObject = stream
+                            audio.play()
+                        }
+                    })
+                }
+            }
+        } else {
+            console.log('Your browser does not support websockets')
+        }
+    </script>
+    <audio id="remoteAudio"></audio>
+    <audio id="localAudio" muted="muted"></audio>
+    <input id='login' placeholder='Login'>
+	<input id='password' placeholder='Password'>
+	<input id='destination' placeholder='Destination'>
+	<button id='call'>Call</button>
+</body>
+
+</html> 
